@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../context/AuthContext';
 import SafeIcon from '../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
 
-const { FiMenu, FiX, FiChevronDown, FiPhone, FiMail } = FiIcons;
+const { FiMenu, FiX, FiChevronDown, FiPhone, FiMail, FiUser, FiLogOut, FiCrown } = FiIcons;
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const location = useLocation();
+  const { isAuthenticated, user, logout } = useAuth();
 
   const managedServices = [
     { name: 'Intune Management', path: '/services/intune-management' },
@@ -26,6 +28,11 @@ const Header = () => {
     { name: 'Security Assessment', path: '/projects/security-assessment' },
   ];
 
+  const handleLogout = () => {
+    logout();
+    setIsMenuOpen(false);
+  };
+
   return (
     <>
       {/* Top Contact Bar */}
@@ -38,12 +45,27 @@ const Header = () => {
             </div>
             <div className="flex items-center space-x-2">
               <SafeIcon icon={FiMail} className="w-4 h-4" />
-              <span>contact@yourintunepartner.com</span>
+              <span>sales@yourintunepartner.com</span>
             </div>
           </div>
           <div className="flex items-center space-x-4">
-            <span>Support: support@yourintunepartner.com</span>
-            <span>Sales: sales@yourintunepartner.com</span>
+            {isAuthenticated ? (
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
+                  <span>Welcome, {user?.name || 'User'}</span>
+                  {user?.role === 'admin' && (
+                    <SafeIcon icon={FiCrown} className="w-4 h-4 text-amber-300" />
+                  )}
+                </div>
+                <Link to="/dashboard" className="hover:text-primary-200">Dashboard</Link>
+                <button onClick={handleLogout} className="hover:text-primary-200">Logout</button>
+              </div>
+            ) : (
+              <>
+                <span>Support: support@yourintunepartner.com</span>
+                <span>Sales: sales@yourintunepartner.com</span>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -54,9 +76,9 @@ const Header = () => {
           <div className="flex items-center justify-between h-20">
             {/* Logo */}
             <Link to="/" className="flex items-center space-x-3">
-              <img 
-                src="https://quest-media-storage-bucket.s3.us-east-2.amazonaws.com/1753747297020-blob" 
-                alt="YourIntunePartner" 
+              <img
+                src="https://quest-media-storage-bucket.s3.us-east-2.amazonaws.com/1753747297020-blob"
+                alt="YourIntunePartner"
                 className="h-12 w-auto"
               />
               <div className="hidden sm:block">
@@ -67,8 +89,8 @@ const Header = () => {
 
             {/* Desktop Navigation */}
             <nav className="hidden lg:flex items-center space-x-8">
-              <Link 
-                to="/" 
+              <Link
+                to="/"
                 className={`text-gray-700 hover:text-primary-600 transition-colors ${
                   location.pathname === '/' ? 'text-primary-600 font-semibold' : ''
                 }`}
@@ -77,7 +99,7 @@ const Header = () => {
               </Link>
 
               {/* Managed Services Dropdown */}
-              <div 
+              <div
                 className="relative"
                 onMouseEnter={() => setActiveDropdown('services')}
                 onMouseLeave={() => setActiveDropdown(null)}
@@ -109,7 +131,7 @@ const Header = () => {
               </div>
 
               {/* Projects & Migrations Dropdown */}
-              <div 
+              <div
                 className="relative"
                 onMouseEnter={() => setActiveDropdown('projects')}
                 onMouseLeave={() => setActiveDropdown(null)}
@@ -140,8 +162,8 @@ const Header = () => {
                 </AnimatePresence>
               </div>
 
-              <Link 
-                to="/advisory-services" 
+              <Link
+                to="/advisory-services"
                 className={`text-gray-700 hover:text-primary-600 transition-colors ${
                   location.pathname === '/advisory-services' ? 'text-primary-600 font-semibold' : ''
                 }`}
@@ -149,21 +171,58 @@ const Header = () => {
                 Advisory & Mentoring
               </Link>
 
-              <Link 
-                to="/about" 
+              <Link
+                to="/about"
                 className={`text-gray-700 hover:text-primary-600 transition-colors ${
                   location.pathname === '/about' ? 'text-primary-600 font-semibold' : ''
                 }`}
               >
-                About
+                About Us
               </Link>
 
-              <Link 
-                to="/contact" 
-                className="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition-colors"
+              <Link
+                to="/blog"
+                className={`text-gray-700 hover:text-primary-600 transition-colors ${
+                  location.pathname === '/blog' || location.pathname.startsWith('/blog/') ? 'text-primary-600 font-semibold' : ''
+                }`}
               >
-                Contact Us
+                Blog
               </Link>
+
+              {isAuthenticated ? (
+                <div className="flex items-center space-x-4">
+                  <Link
+                    to="/dashboard"
+                    className="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition-colors flex items-center space-x-2"
+                  >
+                    <span>Dashboard</span>
+                    {user?.role === 'admin' && (
+                      <SafeIcon icon={FiCrown} className="w-4 h-4" />
+                    )}
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="text-gray-700 hover:text-primary-600 transition-colors"
+                  >
+                    <SafeIcon icon={FiLogOut} className="w-5 h-5" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-4">
+                  <Link
+                    to="/login"
+                    className="text-gray-700 hover:text-primary-600 transition-colors"
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    to="/contact"
+                    className="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition-colors"
+                  >
+                    Contact Sales
+                  </Link>
+                </div>
+              )}
             </nav>
 
             {/* Mobile Menu Button */}
@@ -185,14 +244,14 @@ const Header = () => {
                 className="lg:hidden border-t border-gray-200"
               >
                 <div className="py-4 space-y-2">
-                  <Link 
-                    to="/" 
+                  <Link
+                    to="/"
                     onClick={() => setIsMenuOpen(false)}
                     className="block px-4 py-2 text-gray-700 hover:bg-primary-50 rounded-md"
                   >
                     Home
                   </Link>
-                  
+
                   <div className="px-4 py-2">
                     <p className="text-sm font-semibold text-gray-900 mb-2">Managed Services</p>
                     <div className="pl-4 space-y-1">
@@ -225,29 +284,67 @@ const Header = () => {
                     </div>
                   </div>
 
-                  <Link 
-                    to="/advisory-services" 
+                  <Link
+                    to="/advisory-services"
                     onClick={() => setIsMenuOpen(false)}
                     className="block px-4 py-2 text-gray-700 hover:bg-primary-50 rounded-md"
                   >
                     Advisory & Mentoring
                   </Link>
 
-                  <Link 
-                    to="/about" 
+                  <Link
+                    to="/about"
                     onClick={() => setIsMenuOpen(false)}
                     className="block px-4 py-2 text-gray-700 hover:bg-primary-50 rounded-md"
                   >
-                    About
+                    About Us
                   </Link>
 
-                  <Link 
-                    to="/contact" 
+                  <Link
+                    to="/blog"
                     onClick={() => setIsMenuOpen(false)}
-                    className="block mx-4 mt-4 bg-primary-600 text-white px-4 py-2 rounded-lg text-center"
+                    className="block px-4 py-2 text-gray-700 hover:bg-primary-50 rounded-md"
                   >
-                    Contact Us
+                    Blog
                   </Link>
+
+                  {isAuthenticated ? (
+                    <>
+                      <Link
+                        to="/dashboard"
+                        onClick={() => setIsMenuOpen(false)}
+                        className="flex items-center justify-between mx-4 mt-4 bg-primary-600 text-white px-4 py-2 rounded-lg"
+                      >
+                        <span>Dashboard</span>
+                        {user?.role === 'admin' && (
+                          <SafeIcon icon={FiCrown} className="w-4 h-4" />
+                        )}
+                      </Link>
+                      <button
+                        onClick={handleLogout}
+                        className="block mx-4 mt-2 text-gray-700 hover:text-primary-600 px-4 py-2 text-left"
+                      >
+                        Logout
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <Link
+                        to="/login"
+                        onClick={() => setIsMenuOpen(false)}
+                        className="block px-4 py-2 text-gray-700 hover:bg-primary-50 rounded-md"
+                      >
+                        Login
+                      </Link>
+                      <Link
+                        to="/contact"
+                        onClick={() => setIsMenuOpen(false)}
+                        className="block mx-4 mt-4 bg-primary-600 text-white px-4 py-2 rounded-lg text-center"
+                      >
+                        Contact Sales
+                      </Link>
+                    </>
+                  )}
                 </div>
               </motion.div>
             )}

@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import SafeIcon from '../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
+import { sendContactEmail } from '../utils/emailService';
 
-const { FiPhone, FiMail, FiMapPin, FiClock, FiSend, FiMessageSquare } = FiIcons;
+const { FiPhone, FiMail, FiMapPin, FiClock, FiSend, FiMessageSquare, FiCheck, FiX } = FiIcons;
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -15,11 +16,47 @@ const Contact = () => {
     message: ''
   });
 
-  const handleSubmit = (e) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState(null);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Handle form submission here
-    console.log('Form submitted:', formData);
-    alert('Thank you for your message! We will get back to you soon.');
+    setIsSubmitting(true);
+    setSubmitStatus(null);
+
+    try {
+      const result = await sendContactEmail(formData);
+      
+      if (result.success) {
+        setSubmitStatus({
+          type: 'success',
+          message: 'Thank you for your message! We\'ll get back to you within 24 hours.'
+        });
+        // Reset form
+        setFormData({
+          name: '',
+          email: '',
+          company: '',
+          phone: '',
+          service: '',
+          message: ''
+        });
+      } else {
+        setSubmitStatus({
+          type: 'error',
+          message: result.message || 'Failed to send message. Please try again or contact us directly at sales@yourintunepartner.com'
+        });
+      }
+    } catch (error) {
+      setSubmitStatus({
+        type: 'error',
+        message: 'An unexpected error occurred. Please contact us directly at sales@yourintunepartner.com'
+      });
+    } finally {
+      setIsSubmitting(false);
+      // Clear status after 5 seconds
+      setTimeout(() => setSubmitStatus(null), 5000);
+    }
   };
 
   const handleChange = (e) => {
@@ -38,9 +75,9 @@ const Contact = () => {
     },
     {
       icon: FiMail,
-      title: 'Email',
-      details: 'contact@yourintunepartner.com',
-      action: 'mailto:contact@yourintunepartner.com'
+      title: 'Sales Email',
+      details: 'sales@yourintunepartner.com',
+      action: 'mailto:sales@yourintunepartner.com'
     },
     {
       icon: FiClock,
@@ -104,8 +141,7 @@ const Contact = () => {
                   Get In Touch
                 </h2>
                 <p className="text-gray-600 leading-relaxed">
-                  Have questions about our Microsoft Intune services? Need a consultation? 
-                  We're here to help you secure and manage your digital workplace.
+                  Have questions about our Microsoft Intune services? Need a consultation? We're here to help you secure and manage your digital workplace.
                 </p>
               </div>
 
@@ -126,7 +162,7 @@ const Contact = () => {
                         {info.title}
                       </h3>
                       {info.action ? (
-                        <a 
+                        <a
                           href={info.action}
                           className="text-gray-600 hover:text-primary-600 transition-colors"
                         >
@@ -148,7 +184,7 @@ const Contact = () => {
                 <div className="space-y-2 text-sm">
                   <div>
                     <span className="font-medium">Sales:</span>{' '}
-                    <a 
+                    <a
                       href="mailto:sales@yourintunepartner.com"
                       className="text-primary-600 hover:text-primary-700"
                     >
@@ -157,7 +193,7 @@ const Contact = () => {
                   </div>
                   <div>
                     <span className="font-medium">Support:</span>{' '}
-                    <a 
+                    <a
                       href="mailto:support@yourintunepartner.com"
                       className="text-primary-600 hover:text-primary-700"
                     >
@@ -166,11 +202,11 @@ const Contact = () => {
                   </div>
                   <div>
                     <span className="font-medium">General:</span>{' '}
-                    <a 
-                      href="mailto:contact@yourintunepartner.com"
+                    <a
+                      href="mailto:sales@yourintunepartner.com"
                       className="text-primary-600 hover:text-primary-700"
                     >
-                      contact@yourintunepartner.com
+                      sales@yourintunepartner.com
                     </a>
                   </div>
                 </div>
@@ -189,6 +225,21 @@ const Contact = () => {
                   Send Us a Message
                 </h3>
 
+                {/* Status Messages */}
+                {submitStatus && (
+                  <div className={`mb-6 p-4 rounded-lg flex items-center space-x-3 ${
+                    submitStatus.type === 'success' 
+                      ? 'bg-green-50 border border-green-200 text-green-800' 
+                      : 'bg-red-50 border border-red-200 text-red-800'
+                  }`}>
+                    <SafeIcon 
+                      icon={submitStatus.type === 'success' ? FiCheck : FiX} 
+                      className="w-5 h-5 flex-shrink-0" 
+                    />
+                    <span>{submitStatus.message}</span>
+                  </div>
+                )}
+
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
@@ -201,11 +252,11 @@ const Contact = () => {
                         required
                         value={formData.name}
                         onChange={handleChange}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors"
+                        disabled={isSubmitting}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         placeholder="Your full name"
                       />
                     </div>
-
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Email Address *
@@ -216,7 +267,8 @@ const Contact = () => {
                         required
                         value={formData.email}
                         onChange={handleChange}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors"
+                        disabled={isSubmitting}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         placeholder="your@email.com"
                       />
                     </div>
@@ -232,11 +284,11 @@ const Contact = () => {
                         name="company"
                         value={formData.company}
                         onChange={handleChange}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors"
+                        disabled={isSubmitting}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         placeholder="Your company name"
                       />
                     </div>
-
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Phone Number
@@ -246,7 +298,8 @@ const Contact = () => {
                         name="phone"
                         value={formData.phone}
                         onChange={handleChange}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors"
+                        disabled={isSubmitting}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         placeholder="(555) 123-4567"
                       />
                     </div>
@@ -260,7 +313,8 @@ const Contact = () => {
                       name="service"
                       value={formData.service}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors"
+                      disabled={isSubmitting}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <option value="">Select a service</option>
                       {services.map((service) => (
@@ -281,17 +335,28 @@ const Contact = () => {
                       rows={5}
                       value={formData.message}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors resize-none"
+                      disabled={isSubmitting}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors resize-none disabled:opacity-50 disabled:cursor-not-allowed"
                       placeholder="Tell us about your project or how we can help you..."
                     />
                   </div>
 
                   <button
                     type="submit"
-                    className="w-full bg-primary-600 text-white px-8 py-4 rounded-lg font-semibold hover:bg-primary-700 transition-colors flex items-center justify-center space-x-2"
+                    disabled={isSubmitting}
+                    className="w-full bg-primary-600 text-white px-8 py-4 rounded-lg font-semibold hover:bg-primary-700 transition-colors flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <SafeIcon icon={FiSend} className="w-5 h-5" />
-                    <span>Send Message</span>
+                    {isSubmitting ? (
+                      <>
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                        <span>Sending...</span>
+                      </>
+                    ) : (
+                      <>
+                        <SafeIcon icon={FiSend} className="w-5 h-5" />
+                        <span>Send Message</span>
+                      </>
+                    )}
                   </button>
                 </form>
               </div>
@@ -335,7 +400,7 @@ const Contact = () => {
             </motion.a>
 
             <motion.a
-              href="mailto:contact@yourintunepartner.com"
+              href="mailto:sales@yourintunepartner.com"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
@@ -345,13 +410,13 @@ const Contact = () => {
                 <SafeIcon icon={FiMail} className="w-8 h-8 text-blue-600" />
               </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Email Us
+                Email Sales
               </h3>
               <p className="text-gray-600 text-sm">
                 Send us your questions anytime
               </p>
               <p className="text-primary-600 font-semibold mt-2 text-sm">
-                contact@yourintunepartner.com
+                sales@yourintunepartner.com
               </p>
             </motion.a>
 
